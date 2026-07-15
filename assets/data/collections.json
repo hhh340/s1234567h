@@ -1,0 +1,30 @@
+[
+  {
+    "id": "the-autumn-archive",
+    "name": "The Autumn Archive",
+    "tagline": "Coats, corduroy, and the pieces built for weather",
+    "description": "Shearling, waxed cotton, and wool built for decades, not seasons. Every coat in this edit has already survived one winter it wasn't supposed to.",
+    "image": "1727515546577-f7d82a47b51d"
+  },
+  {
+    "id": "denim-diaries",
+    "name": "Denim Diaries",
+    "tagline": "Selvedge, flares, and honest wear through the decades",
+    "description": "From 70s flares to 90s truckers — denim tells time better than anything else in the store. We keep the fades that took decades to earn.",
+    "image": "1611312449408-fcece27cdbb7"
+  },
+  {
+    "id": "the-luxury-edit",
+    "name": "The Luxury Vintage Edit",
+    "tagline": "Authenticated designer archive pieces",
+    "description": "Our most closely vetted rail. Every piece here is authenticated, condition-graded, and genuinely rare — the reason collectors check this page first.",
+    "image": "1770733530182-cf94277c3cf7"
+  },
+  {
+    "id": "sunday-market",
+    "name": "Sunday Market",
+    "tagline": "Accessories, shoes, and finishing touches",
+    "description": "The small pieces that make an outfit feel finished — bags, boots, belts, and the kind of gold-tone sunglasses that never went out of style.",
+    "image": "1718622795525-2295971921ba"
+  }
+]
