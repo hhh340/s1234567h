@@ -169,9 +169,9 @@ def render_drawers():
   </div>
   <div class="drawer__body" data-drawer-body="bag"></div>
   <div class="drawer__foot" data-drawer-foot="bag" style="display:none">
-    <div class="drawer-summary-row total"><span>Est. Total</span><span data-bag-total>$0</span></div>
-    <p class="cursor-note" style="margin-bottom:1rem">No checkout yet — reserve pieces and we'll confirm availability by email within one business day.</p>
-    <a href="/contact.html?ref=bag" class="btn btn-primary btn-block">Enquire to Reserve</a>
+    <div class="drawer-summary-row"><span>Subtotal</span><span data-bag-total>$0</span></div>
+    <p class="cursor-note" style="margin-bottom:1rem">Shipping calculated at checkout · Free local pickup in Portland</p>
+    <a href="/checkout.html" class="btn btn-primary btn-block">Checkout</a>
   </div>
 </div>
 """
@@ -317,7 +317,7 @@ BASE = """<!DOCTYPE html>
 <meta name="description" content="__DESCRIPTION__">
 <link rel="canonical" href="__CANONICAL__">
 <meta name="theme-color" content="#f7f1e6">
-<meta name="robots" content="index, follow">
+<meta name="robots" content="__ROBOTS__">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/favicon.svg">
 <link rel="manifest" href="/site.webmanifest">
@@ -384,7 +384,7 @@ def base_business_ld():
     }
 
 
-def render_page(path, active, title, description, content, og_image=None, extra_ld=None, extra_scripts="", body_class=""):
+def render_page(path, active, title, description, content, og_image=None, extra_ld=None, extra_scripts="", body_class="", noindex=False):
     canonical = SITE["url"] + path
     og = og_image or img(PRODUCTS[0]["images"][0], 1200)
     ld_list = [base_business_ld()]
@@ -394,6 +394,7 @@ def render_page(path, active, title, description, content, og_image=None, extra_
     html = (
         BASE.replace("__TITLE__", title)
         .replace("__DESCRIPTION__", description)
+        .replace("__ROBOTS__", "noindex, nofollow" if noindex else "index, follow")
         .replace("__CANONICAL__", canonical)
         .replace("__SITE_NAME__", SITE["name"])
         .replace("__OG_TITLE__", title)
@@ -839,7 +840,7 @@ def build_product_page(p):
         ("Details &amp; Condition", details_list),
         ("Measurements &amp; Fit", f"<p>This is a genuine one-of-one vintage piece in size {p['size']}, hand-graded as <strong>{p['condition']}</strong>. Fit runs true to its era — if you're unsure how that compares to modern sizing, message us before reserving and we'll walk you through exact measurements.</p>"),
         ("Care Instructions", f"<p>{care_tip(p['material'])}</p>"),
-        ("Reservation &amp; Pickup", "<p>Add this piece to your bag, then submit an enquiry from the Contact page. We hold reserved items for 48 hours and confirm availability by email — free local pickup in Portland, or shipping nationwide.</p>"),
+        ("Shipping &amp; Pickup", "<p>Check out securely online — free local pickup on Alder Street in Portland (usually ready within 2 hours), standard tracked shipping in 3–5 business days (free over $200), or express in 1–2. Luxury pieces always ship insured.</p>"),
     ])
 
     same_collection = [x for x in PRODUCTS if x["collection"] == p["collection"] and x["id"] != p["id"]]
@@ -871,7 +872,7 @@ def build_product_page(p):
           <button class="btn btn-primary" type="button" data-add-to-bag="{p['id']}" data-size="{p['size']}">Add to Bag — {money(p['price'])}</button>
           <button class="icon-btn" type="button" data-wish-id="{p['id']}" aria-label="Save {p['name']} to wishlist">{icon('heart')}</button>
         </div>
-        <div class="pd-note">{icon('shield')}<span>Authenticity checked and condition-graded by our team. No checkout yet — reserving adds this to your bag, then we confirm by email within one business day.</span></div>
+        <div class="pd-note">{icon('shield')}<span>Authenticity checked and condition-graded by our team. Free local pickup in Portland, or insured, tracked shipping nationwide — free on orders over $200.</span></div>
         <div style="margin-top:2rem">{accordion}</div>
       </div>
     </div>
@@ -1316,9 +1317,9 @@ def build_about():
 # --------------------------------------------------------------------------
 
 FAQ_GROUPS = [
-    ("reserving", "Ordering &amp; Reserving", [
-        ("How does buying work if there's no checkout?", "Add pieces to your bag, then submit an enquiry from the Contact page. We confirm availability and next steps — payment plus pickup or shipping — by email, usually within one business day."),
-        ("Can I put a piece on hold without paying?", "Yes. Adding to your bag and submitting an enquiry reserves it for 48 hours at no cost. If we don't hear back to confirm, it goes back on the rail for someone else."),
+    ("reserving", "Ordering &amp; Payment", [
+        ("How does ordering work?", "Add pieces to your bag and check out like any other store — enter your contact, shipping, and card details, and you'll get an order confirmation with a delivery estimate right away. We accept all major cards."),
+        ("Can I put a piece on hold without paying?", "Yes. Message us from the Contact page with the SKU and we'll hold it for 48 hours at no cost. If we don't hear back to confirm, it goes back on the rail for someone else."),
         ("Do pieces sell out quickly?", "Often, yes — every piece is one-of-one, so once it's gone, it's gone. We don't restock the exact same item, though similar pieces come through regularly."),
         ("Can I visit and buy in person instead?", "Always. Everything online is also on the floor in Portland — see the Contact page for our current hours."),
     ]),
@@ -1370,7 +1371,7 @@ def build_faq():
     content = page_header(
         "Questions, Answered",
         "Frequently Asked Questions",
-        "Everything about reserving, shipping, sizing, and how a piece earns a spot on our rail. Can't find it here? Reach out — we answer everything ourselves.",
+        "Everything about ordering, shipping, sizing, and how a piece earns a spot on our rail. Can't find it here? Reach out — we answer everything ourselves.",
         [("Home", "/"), ("FAQ", None)],
     )
     content += f"""
@@ -1537,6 +1538,189 @@ def build_robots():
         f.write(txt)
 
 
+# --------------------------------------------------------------------------
+# Checkout
+# --------------------------------------------------------------------------
+
+def build_checkout():
+    content = f"""
+<div class="container" style="padding-top:calc(var(--sp-8) + 1rem);padding-bottom:1rem">
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/" class="link">Home</a> <span>/</span> <a href="/shop.html" class="link">Shop</a> <span>/</span> <span>Checkout</span></nav>
+</div>
+<section class="section--tight" style="padding-top:1rem">
+  <div class="container">
+    <div class="checkout-empty" data-checkout-empty style="display:none">
+      {icon('bag')}
+      <h1 style="font-size:var(--fs-display-s)">Your bag is empty.</h1>
+      <p style="color:var(--text-muted);margin-top:.75rem">Find something one-of-one first — then come back here.</p>
+      <div style="margin-top:1.75rem"><a href="/shop.html" class="btn btn-primary">Shop All Pieces</a></div>
+    </div>
+
+    <div class="order-success" data-order-success style="display:none">
+      <div class="order-success__check">{icon('check')}</div>
+      <h1 data-conf-name>Thank you.</h1>
+      <p class="lede">Your order is confirmed. A receipt is on its way to <strong data-conf-email></strong>.</p>
+      <div class="order-num" data-conf-number>SSV-000000-0000</div>
+      <p class="lede" style="font-size:.9rem" data-conf-delivery></p>
+      <div class="summary-card">
+        <h2>Order Summary</h2>
+        <div data-conf-items></div>
+        <div class="summary-rows">
+          <div class="summary-row"><span>Subtotal</span><span data-conf-subtotal>$0.00</span></div>
+          <div class="summary-row"><span>Shipping</span><span data-conf-shipping>$0.00</span></div>
+          <div class="summary-row"><span>Sales tax (Oregon)</span><span>$0.00</span></div>
+          <div class="summary-row total"><span>Total</span><span data-conf-total>$0.00</span></div>
+          <div class="summary-row"><span>Paid with</span><span data-conf-payment></span></div>
+        </div>
+      </div>
+      <div style="margin-top:2rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+        <a href="/shop.html" class="btn btn-primary">Keep Shopping</a>
+        <a href="/" class="btn btn-secondary">Back To Home</a>
+      </div>
+    </div>
+
+    <div class="checkout-layout" data-checkout-layout>
+      <form data-checkout-form novalidate>
+        <div class="co-section">
+          <div class="co-head"><span class="co-num">1</span><h2>Contact</h2></div>
+          <div class="field-row">
+            <div class="field">
+              <label for="co-first">First Name</label>
+              <input id="co-first" name="first-name" type="text" required autocomplete="given-name">
+              <p class="field-error">Please enter your first name.</p>
+            </div>
+            <div class="field">
+              <label for="co-last">Last Name</label>
+              <input id="co-last" name="last-name" type="text" required autocomplete="family-name">
+              <p class="field-error">Please enter your last name.</p>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="co-email">Email</label>
+              <input id="co-email" name="email" type="email" required autocomplete="email" placeholder="you@email.com">
+              <p class="field-error">Please enter a valid email.</p>
+            </div>
+            <div class="field">
+              <label for="co-phone">Phone <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+              <input id="co-phone" name="phone" type="tel" autocomplete="tel">
+            </div>
+          </div>
+        </div>
+
+        <div class="co-section">
+          <div class="co-head"><span class="co-num">2</span><h2>Delivery</h2></div>
+          <label class="radio-card">
+            <input type="radio" name="delivery" value="standard" checked>
+            <span class="radio-card__label">
+              <span class="radio-card__title">Standard Shipping</span>
+              <span class="radio-card__sub">3–5 business days · Tracked · Free over $200</span>
+            </span>
+            <span class="radio-card__price" data-ship-price="standard">$8.00</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="delivery" value="express">
+            <span class="radio-card__label">
+              <span class="radio-card__title">Express Shipping</span>
+              <span class="radio-card__sub">1–2 business days · Tracked &amp; insured</span>
+            </span>
+            <span class="radio-card__price">$18.00</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="delivery" value="pickup">
+            <span class="radio-card__label">
+              <span class="radio-card__title">Free Local Pickup</span>
+              <span class="radio-card__sub">{SITE['address_line']}, Portland · Usually ready in 2 hours</span>
+            </span>
+            <span class="radio-card__price">Free</span>
+          </label>
+        </div>
+
+        <div class="co-section" data-shipping-fields>
+          <div class="co-head"><span class="co-num">3</span><h2>Shipping Address</h2></div>
+          <div class="field">
+            <label for="co-address">Street Address</label>
+            <input id="co-address" name="address" type="text" required autocomplete="street-address">
+            <p class="field-error">Please enter your address.</p>
+          </div>
+          <div class="field-row field-row--3">
+            <div class="field">
+              <label for="co-city">City</label>
+              <input id="co-city" name="city" type="text" required autocomplete="address-level2">
+              <p class="field-error">Please enter your city.</p>
+            </div>
+            <div class="field">
+              <label for="co-state">State</label>
+              <input id="co-state" name="state" type="text" required autocomplete="address-level1" placeholder="OR">
+              <p class="field-error">Required.</p>
+            </div>
+            <div class="field">
+              <label for="co-zip">ZIP</label>
+              <input id="co-zip" name="zip" type="text" required autocomplete="postal-code" inputmode="numeric">
+              <p class="field-error">Invalid ZIP.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="co-section">
+          <div class="co-head"><span class="co-num" data-pay-step>4</span><h2>Payment</h2></div>
+          <div class="field">
+            <label for="co-card">Card Number</label>
+            <div class="card-input-wrap">
+              <input id="co-card" name="card-number" type="text" required autocomplete="cc-number" inputmode="numeric" placeholder="1234 5678 9012 3456">
+              <span class="card-brand" data-card-brand></span>
+            </div>
+            <p class="field-error">Please enter a valid card number.</p>
+          </div>
+          <div class="field">
+            <label for="co-card-name">Name On Card</label>
+            <input id="co-card-name" name="card-name" type="text" required autocomplete="cc-name">
+            <p class="field-error">Please enter the name on the card.</p>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="co-expiry">Expiry</label>
+              <input id="co-expiry" name="card-expiry" type="text" required autocomplete="cc-exp" inputmode="numeric" placeholder="MM/YY">
+              <p class="field-error">Enter a valid future date.</p>
+            </div>
+            <div class="field">
+              <label for="co-cvv">Security Code</label>
+              <input id="co-cvv" name="card-cvv" type="text" required autocomplete="cc-csc" inputmode="numeric" placeholder="CVC">
+              <p class="field-error">3–4 digits.</p>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" data-pay-btn style="margin-top:.5rem"><span>Pay</span></button>
+          <div class="secure-note">{icon('shield')}<span>Demo checkout — no real payment is processed and card details are never stored.</span></div>
+        </div>
+      </form>
+
+      <aside class="summary-card" aria-label="Order summary">
+        <h2>Order Summary</h2>
+        <div data-summary-items></div>
+        <div class="summary-rows">
+          <div class="summary-row"><span>Subtotal</span><span data-sum-subtotal>$0.00</span></div>
+          <div class="summary-row"><span>Shipping</span><span data-sum-shipping>$8.00</span></div>
+          <div class="summary-row"><span>Sales tax (Oregon)</span><span>$0.00</span></div>
+          <div class="summary-row total"><span>Total</span><span data-sum-total>$0.00</span></div>
+        </div>
+        <div class="secure-note" style="justify-content:flex-start">{icon('recycle')}<span>Every purchase keeps one more garment out of a landfill.</span></div>
+      </aside>
+    </div>
+  </div>
+</section>
+"""
+    html = render_page(
+        path="/checkout.html",
+        active="shop",
+        title=f"Checkout — {SITE['name']}",
+        description="Secure checkout for your one-of-one vintage pieces.",
+        content=content,
+        noindex=True,
+        extra_scripts='<script src="/assets/js/checkout.js"></script>',
+    )
+    write("/checkout.html", html)
+
+
 if __name__ == "__main__":
     build_home()
     build_shop()
@@ -1550,8 +1734,9 @@ if __name__ == "__main__":
     build_about()
     build_faq()
     build_contact()
+    build_checkout()
     build_404()
     build_sitemap()
     build_robots()
     print(f"Built: Home, Shop, {len(PRODUCTS)} products, Collections index + {len(COLLECTIONS)} collections, "
-          f"Lookbook, Sustainability, About, FAQ, Contact, 404, sitemap.xml, robots.txt.")
+          f"Lookbook, Sustainability, About, FAQ, Contact, Checkout, 404, sitemap.xml, robots.txt.")

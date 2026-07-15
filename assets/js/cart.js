@@ -28,8 +28,13 @@
 
   function addToBag(id, size) {
     const items = getBag();
-    const existing = items.find((i) => i.id === id && i.size === size);
-    if (existing) { existing.qty += 1; } else { items.push({ id, size: size || "One Size", qty: 1 }); }
+    const existing = items.find((i) => i.id === id);
+    if (existing) {
+      // Every piece is one-of-one — you can't buy two of the same garment
+      showToast("This one-of-one piece is already in your bag");
+      return;
+    }
+    items.push({ id, size: size || "One Size", qty: 1 });
     saveBag(items);
     showToast("Added to your bag");
     pulseIcon("bag");
